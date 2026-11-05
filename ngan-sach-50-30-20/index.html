@@ -115,7 +115,7 @@ footer{font-size:.85rem;color:#64748b;margin-top:16px}
   if (links.length) {
     const box = $("aff"), h = document.createElement("h2"), ul = document.createElement("ul"), p = document.createElement("p");
     h.textContent = "Gợi ý cho bạn"; p.className = "note";
-    p.textContent = "Liên kết tiếp thị Shopee: nếu bạn mua qua liên kết, trang có thể nhận hoa hồng — giá bạn trả không đổi.";
+    p.textContent = "Liên kết tiếp thị (" + [...new Set(links.map(function (l) { return l.network || "Shopee"; }))].join(", ") + "): nếu bạn mua hoặc đăng ký qua liên kết, trang có thể nhận hoa hồng — giá bạn trả không đổi.";
     links.forEach((l) => { const li = document.createElement("li"), a = document.createElement("a");
       a.href = l.url; a.textContent = l.title; a.target = "_blank"; a.rel = "sponsored noopener"; li.appendChild(a); ul.appendChild(li); });
     box.append(h, ul, p); box.hidden = false;
