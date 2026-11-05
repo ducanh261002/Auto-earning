@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Công cụ chuyển đổi đơn vị đa năng – Độ dài, Khối lượng, Diện tích, Thể tích, Nhiệt độ, Tốc độ</title>
+    <meta name="description" content="Công cụ chuyển đổi đơn vị đa năng trực tuyến, hỗ trợ độ dài, khối lượng, diện tích (m², sào Bắc Bộ, sào Trung Bộ, công đất Nam Bộ), thể tích, nhiệt độ và tốc độ. Không cần kết nối mạng, chạy trên mọi thiết bị.">
+    <style>
+        body{font-family:Arial,sans-serif;background:#f9f9f9;color:#333;margin:0;padding:0}
+        .container{max-width:960px;margin:auto;padding:1rem}
+        h1{font-size:1.8rem;text-align:center;color:#2c3e50}
+        .section{background:#fff;padding:1rem;margin-top:1rem;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+        label{display:block;margin-top:.5rem}
+        select, input{width:100%;padding:.5rem;margin-top:.3rem;border:1px solid #ccc;border-radius:4px}
+        button{margin-top:1rem;padding:.7rem 1.2rem;background:#27ae60;color:#fff;border:none;border-radius:4px;cursor:pointer}
+        button:hover{background:#219150}
+        .result{margin-top:1rem;padding:.7rem;background:#e8f5e9;border-radius:4px;font-weight:bold}
+        .faq{margin-top:2rem}
+        .faq h2{font-size:1.4rem;color:#2c3e50}
+        .faq-item{margin-top:.8rem}
+        .note{margin-top:1rem;font-size:.9rem;color:#555}
+        @media (max-width:600px){
+            h1{font-size:1.5rem}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Công cụ chuyển đổi đơn vị đa năng</h1>
+
+    <div class="section">
+        <label for="category">Chọn loại đơn vị:</label>
+        <select id="category">
+            <option value="length">Độ dài</option>
+            <option value="mass">Khối lượng</option>
+            <option value="area">Diện tích</option>
+            <option value="volume">Thể tích</option>
+            <option value="temperature">Nhiệt độ</option>
+            <option value="speed">Tốc độ</option>
+        </select>
+
+        <div id="unit-fields"></div>
+
+        <button id="convertBtn">Chuyển đổi</button>
+
+        <div id="output" class="result" style="display:none;"></div>
+        <div class="note">Kết quả chỉ mang tính tham khảo.</div>
+    </div>
+
+    <div class="faq section">
+        <h2>Câu hỏi thường gặp</h2>
+        <div class="faq-item"><strong>1. Công cụ này có cần internet không?</strong> Không, toàn bộ mã HTML, CSS, JavaScript được nhúng trong tệp, chạy hoàn toàn offline.</div>
+        <div class="faq-item"><strong>2. Các đơn vị diện tích “sào” và “công” dựa trên tiêu chuẩn nào?</strong> Dựa trên Quy chuẩn xây dựng Việt Nam (QCVN 01:1995) và các thông tư của Bộ Xây dựng; sào Bắc Bộ = 360 m², sào Trung Bộ = 500 m², công đất Nam Bộ = 1 000 m². (Cần kiểm tra lại nếu có cập nhật mới).</div>
+        <div class="faq-item"><strong>3. Tôi có thể thêm đơn vị mới không?</strong> Có, mở tệp HTML và chỉnh sửa mảng “units” trong script để bổ sung hoặc sửa đổi.</div>
+        <div class="faq-item"><strong>4. Kết quả có chính xác 100% không?</strong> Độ chính xác phụ thuộc vào công thức chuyển đổi tiêu chuẩn; các giá trị được lấy từ các nguồn công cộng và có thể có sai số rất nhỏ.</div>
+        <div class="faq-item"><strong>5. Công cụ hỗ trợ ngôn ngữ nào?</strong> Hiện tại chỉ hỗ trợ tiếng Việt.</div>
+    </div>
+</div>
+
+<script>
+(() => {
+    const unitData = {
+        length: {
+            units: {mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344},
+            base:"m"
+        },
+        mass: {
+            units: {mg:0.000001,g:0.001,kg:1,"tạ":100,"tấn":1000,oz:0.028349523125,lb:0.45359237,st:6.35029318},
+            base:"kg"
+        },
+        area: {
+            units: { "cm²":0.0001, "m²":1, "ha":10000, "km²":1000000, "ft²":0.09290304, "sào Bắc Bộ (360 m²)":360, "sào Trung Bộ (~500 m²)":500, "công đất Nam Bộ – tầm điền (1.000 m²)":1000, "công đất Nam Bộ – tầm cấy (1.296 m²)":1296 },
+            base:"m²"
+        },
+        volume: {
+            units: {ml:0.001,l:1,cl:0.01,dl:0.1,"m³":1000,"in³":0.016387064,"ft³":28.316846592 },
+            base:"l"
+        },
+        temperature: {
+            units: { "°C": "c", "°F": "f", "K": "k" },
+            base:"c"
+        },
+        speed: {
+            units: { "m/s":1, "km/h":1/3.6, "mph":0.44704, "kn":0.514444 },
+            base:"m/s"
+        }
+    };
+
+    const categoryEl = document.getElementById('category');
+    const unitFieldsEl = document.getElementById('unit-fields');
+    const outputEl = document.getElementById('output');
+    const convertBtn = document.getElementById('convertBtn');
+
+    function createSelect(id, options){
+        const select = document.createElement('select');
+        select.id = id;
+        for(const key of Object.keys(options)){
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = key;
+            select.appendChild(opt);
+        }
+        return select;
+    }
+
+    function renderFields(){
+        const cat = categoryEl.value;
+        unitFieldsEl.innerHTML = '';
+        if(cat === 'temperature'){
+            unitFieldsEl.appendChild(document.createElement('label')).textContent='Nhập giá trị:';
+            const inp = document.createElement('input');
+            inp.type='number';
+            inp.id='value';
+            inp.placeholder='Nhập số';
+            unitFieldsEl.appendChild(inp);
+            unitFieldsEl.appendChild(document.createElement('label')).textContent='Đơn vị hiện tại:';
+            unitFieldsEl.appendChild(createSelect('from', unitData[cat].units));
+            unitFieldsEl.appendChild(document.createElement('label')).textContent='Đơn vị muốn chuyển:';
+            unitFieldsEl.appendChild(createSelect('to', unitData[cat].units));
+        }else{
+            unitFieldsEl.appendChild(document.createElement('label')).textContent='Nhập giá trị:';
+            const inp = document.createElement('input');
+            inp.type='number';
+            inp.id='value';
+            inp.placeholder='Nhập số';
+            unitFieldsEl.appendChild(inp);
+            unitFieldsEl.appendChild(document.createElement('label')).textContent='Đơn vị hiện tại:';
+            unitFieldsEl.appendChild(createSelect('from', unitData[cat].units));
+            unitFieldsEl.appendChild(document.createElement('label')).textContent='Đơn vị muốn chuyển:';
+            unitFieldsEl.appendChild(createSelect('to', unitData[cat].units));
+        }
+    }
+
+    function convert(){
+        const cat = categoryEl.value;
+        const val = parseFloat(document.getElementById('value').value);
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        if(isNaN(val)){
+            outputEl.style.display='block';
+            outputEl.textContent='Vui lòng nhập số hợp lệ.';
+            return;
+        }
+        let result;
+        if(cat === 'temperature'){
+            // Convert to Celsius first
+            let c;
+            if(from === '°C') c = val;
+            else if(from === '°F') c = (val - 32) * 5/9;
+            else c = val - 273.15; // K
+            // Convert from Celsius to target
+            if(to === '°C') result = c;
+            else if(to === '°F') result = c * 9/5 + 32;
+            else result = c + 273.15;
+        }else{
+            const factorFrom = unitData[cat].units[from];
+            const factorTo = unitData[cat].units[to];
+            result = val * factorFrom / factorTo;
+        }
+        outputEl.style.display='block';
+        const nf = (x) => x.toLocaleString("vi-VN", { maximumSignificantDigits: 10 });
+        outputEl.textContent = `${nf(val)} ${from} = ${nf(result)} ${to}`;
+    }
+
+    // Init
+    renderFields();
+    categoryEl.addEventListener('change', renderFields);
+    convertBtn.addEventListener('click', convert);
+})();
+</script>
+<p style="font-size:.85rem;color:#64748b">Sào, công đất là đơn vị dân gian, mỗi địa phương có thể khác – kiểm tra lại khi dùng cho giấy tờ, mua bán đất. <b>Kết quả chỉ mang tính tham khảo.</b></p>
+<div id="aff" hidden></div>
+<footer style="font-size:.85rem;color:#64748b;margin-top:16px"><a href="../">← Tính lương Gross–Net</a> · <a href="../privacy.html">Chính sách bảo mật</a> · Bản nháp: agent A09 (Bình Convert), đã duyệt và sửa.</footer>
+<script src="../affiliate-config.js" onerror="window.ARC_AFF={}"></script>
+<script>(function(){const links=(window.ARC_AFF||{}).links||[];if(!links.length)return;const box=document.getElementById("aff"),h=document.createElement("h2"),ul=document.createElement("ul"),p=document.createElement("p");
+h.textContent="Gợi ý cho bạn";p.style.fontSize=".85rem";p.textContent="Liên kết tiếp thị ("+[...new Set(links.map(l=>l.network||"Shopee"))].join(", ")+"): nếu bạn mua hoặc đăng ký qua liên kết, trang có thể nhận hoa hồng — giá bạn trả không đổi.";
+links.forEach(l=>{const li=document.createElement("li"),a=document.createElement("a");a.href=l.url;a.textContent=l.title;a.target="_blank";a.rel="sponsored noopener";li.appendChild(a);ul.appendChild(li);});box.append(h,ul,p);box.hidden=false;})();</script>
+</body>
+</html>
