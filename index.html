@@ -74,6 +74,8 @@
     <p class="note" id="sources"></p>
   </div>
 
+  <div class="card" id="aff" style="display:none"></div>
+
   <footer>
     Công cụ tham khảo, không thay thế tư vấn thuế hay xác nhận của cơ quan thuế/BHXH. Không áp dụng cho trường hợp đặc biệt
     (người nước ngoài không cư trú, hợp đồng dưới 3 tháng khấu trừ 10%, miễn giảm riêng…). Không thu thập dữ liệu lương của bạn;
@@ -82,6 +84,25 @@
 </div>
 
 <script src="ads-config.js" onerror="window.ARC_ADS={}"></script>
+<script src="affiliate-config.js" onerror="window.ARC_AFF={}"></script>
+<script>
+// ===== Liên kết affiliate Shopee: chỉ hiện khi chủ sở hữu đã nhập link trong AI Revenue City (affiliate-config.js)
+(function () {
+  const links = (window.ARC_AFF || {}).links || [];
+  if (!links.length) return;
+  const box = document.getElementById("aff");
+  const h = document.createElement("h2"); h.style.marginTop = "0"; h.textContent = "Gợi ý cho bạn";
+  const note = document.createElement("p"); note.className = "note";
+  note.textContent = "Liên kết tiếp thị Shopee: nếu bạn mua qua liên kết, trang có thể nhận hoa hồng — giá bạn trả không đổi.";
+  const ul = document.createElement("ul");
+  links.forEach(function (l) {
+    const li = document.createElement("li"), a = document.createElement("a");
+    a.href = l.url; a.textContent = l.title; a.target = "_blank"; a.rel = "sponsored noopener";
+    li.appendChild(a); ul.appendChild(li);
+  });
+  box.append(h, ul, note); box.style.display = "block";
+})();
+</script>
 <script>
 // ===== Quảng cáo: chỉ hiển thị khi chủ sở hữu đã bật AdSense trong AI Revenue City (ads-config.js)
 (function () {
