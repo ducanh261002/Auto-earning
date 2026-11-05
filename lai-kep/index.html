@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tính lãi kép tiết kiệm – gửi góp hằng tháng (VND)</title>
+<meta name="description" content="Công cụ tính lãi kép miễn phí: số tiền ban đầu, gửi thêm hằng tháng, lãi suất tự nhập, kỳ ghép lãi tháng/quý/năm. Xem số dư từng năm, tổng tiền gốc và tiền lãi. Tính ngay trên trình duyệt.">
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f6f7f9;color:#1f2937}
+.container{max-width:560px;margin:20px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+h1{font-size:1.4rem;text-align:center;margin:.2em 0 .6em}
+label{display:block;margin-top:10px;font-weight:600}
+input,select{width:100%;box-sizing:border-box;padding:9px;margin-top:4px;border:1px solid #cbd5e1;border-radius:6px;font-size:1rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{margin-top:12px;padding:10px 14px;width:100%;border:none;background:#0f766e;color:#fff;border-radius:6px;font-size:1rem;cursor:pointer}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.sum div{background:#f1f5f9;border-radius:8px;padding:8px;text-align:center}.sum b{display:block;font-size:1.05rem}
+table{width:100%;margin-top:14px;border-collapse:collapse}th,td{border:1px solid #e2e8f0;padding:7px;text-align:right}th:first-child,td:first-child{text-align:center}
+canvas{width:100%;margin-top:12px}
+.note{font-size:.85rem;color:#64748b;margin-top:10px}.warn{color:#b45309;min-height:1.2em;margin-top:6px}
+footer{font-size:.85rem;color:#64748b;margin-top:16px}
+@media (prefers-color-scheme:dark){body{background:#0b1220;color:#e2e8f0}.container{background:#111827}.sum div{background:#1f2937}th,td{border-color:#334155}input,select{background:#0f172a;color:#e2e8f0;border-color:#334155}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Tính lãi kép tiết kiệm</h1>
+  <form id="f">
+    <div class="grid">
+      <div><label for="p">Số tiền ban đầu (VND)</label><input id="p" type="number" min="0" step="100000" value="10000000" inputmode="numeric"></div>
+      <div><label for="m">Gửi thêm mỗi tháng (VND)</label><input id="m" type="number" min="0" step="100000" value="2000000" inputmode="numeric"></div>
+      <div><label for="r">Lãi suất (%/năm) – bạn tự nhập</label><input id="r" type="number" min="0" max="50" step="0.1" value="5"></div>
+      <div><label for="y">Số năm</label><input id="y" type="number" min="1" max="50" step="1" value="5"></div>
+    </div>
+    <label for="k">Kỳ ghép lãi</label>
+    <select id="k"><option value="12">Hằng tháng</option><option value="4">Hằng quý</option><option value="2">Nửa năm</option><option value="1">Hằng năm</option></select>
+    <button>Tính lãi kép</button>
+  </form>
+  <div class="warn" id="warn" role="status"></div>
+  <div id="out" hidden>
+    <div class="sum"><div>Số dư cuối kỳ<b id="sBal"></b></div><div>Tổng tiền gốc<b id="sDep"></b></div><div>Tiền lãi<b id="sInt"></b></div></div>
+    <canvas id="chart" width="520" height="220" aria-label="Biểu đồ số dư theo năm"></canvas>
+    <table><thead><tr><th>Năm</th><th>Tiền gốc đã gửi</th><th>Số dư</th></tr></thead><tbody id="tb"></tbody></table>
+  </div>
+  <p class="note">Cách tính: tiền gửi thêm vào cuối mỗi tháng; lãi được ghép theo kỳ bạn chọn (trong kỳ, tiền gửi giữa kỳ hưởng lãi
+    tỷ lệ theo số tháng còn lại). Lãi suất do bạn tự nhập – hãy kiểm tra lãi suất thực tế của ngân hàng. Không tính thuế, phí hay lạm phát.
+    <b>Kết quả chỉ mang tính tham khảo.</b></p>
+
+  <section>
+    <h2 style="font-size:1.15rem">Câu hỏi thường gặp</h2>
+    <p><b>Lãi kép là gì?</b><br>Tiền lãi được cộng vào gốc sau mỗi kỳ, và kỳ sau lãi được tính trên số đã cộng đó – nên tiền tăng nhanh dần theo thời gian.</p>
+    <p><b>Ghép lãi hằng tháng hay hằng năm lợi hơn?</b><br>Cùng một lãi suất năm, ghép càng thường xuyên thì số dư càng cao một chút. Đổi kỳ ghép lãi ở trên để so sánh.</p>
+    <p><b>Mỗi tháng nên để dành bao nhiêu?</b><br>Thử <a href="../ngan-sach-50-30-20/">công cụ ngân sách 50/30/20</a> để biết phần tiết kiệm phù hợp với thu nhập của bạn.</p>
+    <p><b>Dữ liệu có được gửi đi không?</b><br>Không. Mọi phép tính chạy ngay trên trình duyệt của bạn.</p>
+  </section>
+
+  <div id="aff" hidden></div>
+  <footer><a href="../">← Tính lương Gross–Net</a> · <a href="../privacy.html">Chính sách bảo mật</a> · Bản nháp: agent A08 (Quân Finance), đã duyệt và sửa.</footer>
+</div>
+<script src="../affiliate-config.js" onerror="window.ARC_AFF={}"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id), fmt = (n) => Math.round(n).toLocaleString("vi-VN") + " ₫";
+  // Mô phỏng theo tháng: gửi cuối tháng; lãi ghép mỗi (12/k) tháng, tiền gửi giữa kỳ hưởng lãi đơn tỷ lệ tới cuối kỳ.
+  function simulate(P, M, rate, years, k) {
+    const per = 12 / k, rp = rate / 100 / k;
+    let base = P, dep = P, inPeriod = 0, accrued = 0; const rows = [];
+    for (let mo = 1; mo <= years * 12; mo++) {
+      const left = per - ((mo - 1) % per) - 1;   // số tháng còn lại tới cuối kỳ (gửi cuối tháng)
+      inPeriod += M; dep += M; accrued += M * rp * (left / per);
+      if (mo % per === 0) { base = base * (1 + rp) + accrued + inPeriod; inPeriod = 0; accrued = 0; }
+      if (mo % 12 === 0) rows.push({ y: mo / 12, dep, bal: base });
+    }
+    return rows;
+  }
+  function draw(rows) {
+    const c = $("chart"), x = c.getContext("2d"), W = c.width, H = c.height, max = Math.max(...rows.map((r) => r.bal)) || 1;
+    x.clearRect(0, 0, W, H); const bw = Math.max(4, (W - 30) / rows.length - 6);
+    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    rows.forEach((r, i) => {
+      const h1 = (r.bal / max) * (H - 40), h2 = (r.dep / max) * (H - 40), X = 20 + i * (bw + 6);
+      x.fillStyle = "#14b8a6"; x.fillRect(X, H - 20 - h1, bw, h1);
+      x.fillStyle = "#64748b"; x.fillRect(X, H - 20 - h2, bw, h2);
+      x.fillStyle = dark ? "#e2e8f0" : "#1f2937"; x.font = "11px system-ui";
+      if (rows.length <= 15 || r.y % 5 === 0) x.fillText(r.y, X + bw / 2 - 3, H - 6);
+    });
+  }
+  $("f").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const P = +$("p").value || 0, M = +$("m").value || 0, r = +$("r").value, y = Math.floor(+$("y").value), k = +$("k").value;
+    if (!(y >= 1 && y <= 50)) { $("warn").textContent = "Số năm phải từ 1 đến 50."; return; }
+    if (!(r >= 0 && r <= 50)) { $("warn").textContent = "Lãi suất phải từ 0 đến 50%/năm."; return; }
+    if (P < 0 || M < 0 || (P === 0 && M === 0)) { $("warn").textContent = "Nhập số tiền ban đầu hoặc số tiền gửi thêm lớn hơn 0."; return; }
+    $("warn").textContent = "";
+    const rows = simulate(P, M, r, y, k), last = rows[rows.length - 1];
+    $("sBal").textContent = fmt(last.bal); $("sDep").textContent = fmt(last.dep); $("sInt").textContent = fmt(last.bal - last.dep);
+    $("tb").innerHTML = rows.map((x) => `<tr><td>${x.y}</td><td>${fmt(x.dep)}</td><td>${fmt(x.bal)}</td></tr>`).join("");
+    draw(rows); $("out").hidden = false;
+  });
+  $("f").requestSubmit();
+  const links = (window.ARC_AFF || {}).links || [];
+  if (links.length) {
+    const box = $("aff"), h = document.createElement("h2"), ul = document.createElement("ul"), p = document.createElement("p");
+    h.textContent = "Gợi ý cho bạn"; h.style.fontSize = "1.15rem"; p.className = "note";
+    p.textContent = "Liên kết tiếp thị (" + [...new Set(links.map((l) => l.network || "Shopee"))].join(", ") +
+      "): nếu bạn mua hoặc đăng ký qua liên kết, trang có thể nhận hoa hồng — giá bạn trả không đổi.";
+    links.forEach((l) => { const li = document.createElement("li"), a = document.createElement("a");
+      a.href = l.url; a.textContent = l.title; a.target = "_blank"; a.rel = "sponsored noopener"; li.appendChild(a); ul.appendChild(li); });
+    box.append(h, ul, p); box.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
