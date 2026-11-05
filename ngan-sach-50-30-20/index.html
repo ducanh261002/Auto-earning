@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lập ngân sách 50/30/20 – chia thu nhập tháng (VND)</title>
+<meta name="description" content="Công cụ lập ngân sách cá nhân theo quy tắc 50/30/20: nhập thu nhập tháng, chia nhu cầu – mong muốn – tiết kiệm, tùy chỉnh tỷ lệ, lưu trên máy và xuất CSV. Miễn phí, không gửi dữ liệu đi đâu.">
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f6f7f9;color:#1f2937}
+.container{max-width:520px;margin:20px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+h1{font-size:1.4rem;text-align:center;margin:.2em 0 .6em}
+label{display:block;margin-top:10px;font-weight:600}
+input[type=number]{width:100%;box-sizing:border-box;padding:9px;margin-top:4px;border:1px solid #cbd5e1;border-radius:6px;font-size:1rem}
+.ratios{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+button{margin-top:12px;padding:10px 14px;width:100%;border:none;background:#0f766e;color:#fff;border-radius:6px;font-size:1rem;cursor:pointer}
+button.alt{background:#475569}
+table{width:100%;margin-top:14px;border-collapse:collapse}
+th,td{border:1px solid #e2e8f0;padding:8px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.note{font-size:.85rem;color:#64748b;margin-top:10px}
+.warn{color:#b45309;font-size:.9rem;margin-top:6px;min-height:1.2em}
+.faq h2{font-size:1.15rem}
+footer{font-size:.85rem;color:#64748b;margin-top:16px}
+@media (prefers-color-scheme:dark){body{background:#0b1220;color:#e2e8f0}.container{background:#111827}th,td{border-color:#334155}input[type=number]{background:#0f172a;color:#e2e8f0;border-color:#334155}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Lập ngân sách 50/30/20</h1>
+
+  <label for="income">Thu nhập thực nhận mỗi tháng (VND)</label>
+  <input type="number" id="income" placeholder="Ví dụ: 15000000" min="0" step="100000" inputmode="numeric">
+
+  <div class="ratios">
+    <div><label for="needRatio">Nhu cầu %</label><input type="number" id="needRatio" value="50" min="0" max="100"></div>
+    <div><label for="wantRatio">Mong muốn %</label><input type="number" id="wantRatio" value="30" min="0" max="100"></div>
+    <div><label for="saveRatio">Tiết kiệm %</label><input type="number" id="saveRatio" value="20" min="0" max="100"></div>
+  </div>
+  <div class="warn" id="warn" role="status"></div>
+
+  <button id="calcBtn">Tính ngân sách</button>
+
+  <table id="resultTable" hidden>
+    <thead><tr><th>Phân mục</th><th>Số tiền (VND)</th></tr></thead>
+    <tbody>
+      <tr><td>Nhu cầu thiết yếu</td><td id="needAmt"></td></tr>
+      <tr><td>Mong muốn</td><td id="wantAmt"></td></tr>
+      <tr><td>Tiết kiệm / trả nợ</td><td id="saveAmt"></td></tr>
+    </tbody>
+  </table>
+  <button id="exportBtn" class="alt" hidden>Xuất CSV</button>
+
+  <p class="note">Kết quả chỉ mang tính tham khảo. Số liệu chỉ lưu trên trình duyệt của bạn (localStorage), không gửi đi đâu.</p>
+
+  <section class="faq">
+    <h2>Câu hỏi thường gặp</h2>
+    <p><strong>Quy tắc 50/30/20 là gì?</strong><br>Chia thu nhập sau thuế: 50% cho nhu cầu thiết yếu (nhà, ăn, đi lại, hóa đơn), 30% cho mong muốn (giải trí, mua sắm), 20% cho tiết kiệm hoặc trả nợ.</p>
+    <p><strong>Có áp dụng cho mọi mức thu nhập?</strong><br>Đây là gợi ý khởi đầu. Thu nhập thấp có thể cần tăng phần nhu cầu; thu nhập cao nên tăng phần tiết kiệm. Bạn chỉnh tỷ lệ tùy ý, miễn tổng bằng 100%.</p>
+    <p><strong>Nên nhập Gross hay Net?</strong><br>Nhập lương thực nhận (Net). Chưa biết Net? Dùng <a href="../">công cụ tính lương Gross–Net</a>.</p>
+    <p><strong>Dữ liệu được lưu ở đâu?</strong><br>Chỉ trong trình duyệt trên thiết bị này. Xóa dữ liệu trang web sẽ xóa luôn.</p>
+  </section>
+
+  <div class="card" id="aff" hidden></div>
+
+  <footer><a href="../">← Tính lương Gross–Net</a> · <a href="../privacy.html">Chính sách bảo mật</a></footer>
+</div>
+
+<script src="../affiliate-config.js" onerror="window.ARC_AFF={}"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const KEY = "budget_50_30_20";
+  const fmt = (n) => Math.round(n).toLocaleString("vi-VN");
+  let last = null;
+
+  function ratios() { return ["needRatio", "wantRatio", "saveRatio"].map((id) => Number($(id).value) || 0); }
+
+  function calculate() {
+    const income = Number($("income").value);
+    const r = ratios(), total = r[0] + r[1] + r[2];
+    if (!(income > 0)) { $("warn").textContent = "Vui lòng nhập thu nhập lớn hơn 0."; return; }
+    if (total !== 100) { $("warn").textContent = "Tổng tỷ lệ phải bằng 100% (hiện tại " + total + "%)."; return; }
+    $("warn").textContent = "";
+    const amt = r.map((p) => Math.round(income * p / 100));
+    $("needAmt").textContent = fmt(amt[0]); $("wantAmt").textContent = fmt(amt[1]); $("saveAmt").textContent = fmt(amt[2]);
+    $("resultTable").hidden = false; $("exportBtn").hidden = false;
+    last = { income, r, amt };
+    try { localStorage.setItem(KEY, JSON.stringify({ income, r })); } catch (e) { /* trình duyệt chặn lưu – bỏ qua */ }
+  }
+
+  function exportCSV() {
+    if (!last) return;
+    const rows = [["Phân mục", "Tỷ lệ (%)", "Số tiền (VND)"],
+      ["Nhu cầu thiết yếu", last.r[0], last.amt[0]], ["Mong muốn", last.r[1], last.amt[1]],
+      ["Tiết kiệm / trả nợ", last.r[2], last.amt[2]], ["Tổng thu nhập", 100, Math.round(last.income)]];
+    const blob = new Blob(["﻿" + rows.map((x) => x.join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "ngan-sach-" + new Date().toISOString().slice(0, 10) + ".csv";
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  $("calcBtn").addEventListener("click", calculate);
+  $("exportBtn").addEventListener("click", exportCSV);
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (s && s.income > 0) {
+      $("income").value = s.income;
+      ["needRatio", "wantRatio", "saveRatio"].forEach((id, i) => { $(id).value = s.r[i]; });
+      calculate();
+    }
+  } catch (e) { /* bỏ qua */ }
+
+  // Liên kết affiliate (chỉ hiện khi chủ trang đã cấu hình)
+  const links = (window.ARC_AFF || {}).links || [];
+  if (links.length) {
+    const box = $("aff"), h = document.createElement("h2"), ul = document.createElement("ul"), p = document.createElement("p");
+    h.textContent = "Gợi ý cho bạn"; p.className = "note";
+    p.textContent = "Liên kết tiếp thị Shopee: nếu bạn mua qua liên kết, trang có thể nhận hoa hồng — giá bạn trả không đổi.";
+    links.forEach((l) => { const li = document.createElement("li"), a = document.createElement("a");
+      a.href = l.url; a.textContent = l.title; a.target = "_blank"; a.rel = "sponsored noopener"; li.appendChild(a); ul.appendChild(li); });
+    box.append(h, ul, p); box.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
