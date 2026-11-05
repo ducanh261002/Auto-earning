@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tính lương Gross sang Net 2026 – Thuế TNCN 5 bậc mới</title>
+<meta name="description" content="Công cụ tính lương Gross ↔ Net năm 2026 miễn phí: biểu thuế TNCN 5 bậc, giảm trừ gia cảnh 15,5 triệu, bảo hiểm bắt buộc, chi phí doanh nghiệp. Tính ngay trên trình duyệt.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💵</text></svg>">
+<style>
+  :root { --bg:#f6f8fb; --card:#fff; --text:#0f172a; --muted:#5b6b86; --line:#e2e8f0; --accent:#0e7490; --accent2:#e0f2fe; --ok:#15803d; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b1220; --card:#111a2e; --text:#e2e8f0; --muted:#94a3b8; --line:#1e2a44; --accent:#22d3ee; --accent2:#0c2a3a; --ok:#4ade80; } }
+  * { box-sizing:border-box } [hidden] { display:none !important } body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:920px; margin:0 auto; padding:16px; }
+  h1 { font-size:clamp(22px,4vw,30px); margin:8px 0 4px } h2 { font-size:18px; margin:24px 0 8px }
+  .sub { color:var(--muted); margin:0 0 16px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin:12px 0; }
+  .mode { display:flex; gap:8px; margin-bottom:12px } .mode button { flex:1; padding:10px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--text); font-weight:600; cursor:pointer }
+  .mode button.on { background:var(--accent); color:#fff; border-color:var(--accent) }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px }
+  label { display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--muted) }
+  input, select { padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--text); font-size:16px; }
+  .big input { font-size:22px; font-weight:700 }
+  .result { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-top:12px }
+  .stat { background:var(--accent2); border-radius:12px; padding:10px 12px } .stat span { display:block; font-size:12px; color:var(--muted) } .stat b { font-size:20px; font-variant-numeric:tabular-nums }
+  .stat.net b { color:var(--ok); font-size:24px }
+  table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums } td,th { padding:6px 8px; border-bottom:1px solid var(--line); text-align:left } td:last-child,th:last-child { text-align:right }
+  .note { font-size:13px; color:var(--muted) } .ad-slot { display:none; min-height:100px; margin:16px 0 }
+  footer { font-size:12px; color:var(--muted); padding:24px 0 }
+  .share { display:flex; gap:8px; flex-wrap:wrap } .share button { padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--text); cursor:pointer }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💵 Tính lương Gross ↔ Net 2026</h1>
+  <p class="sub">Biểu thuế TNCN 5 bậc mới, giảm trừ gia cảnh 15,5 triệu/tháng, người phụ thuộc 6,2 triệu/tháng. Tính ngay trên máy bạn — không gửi dữ liệu lương đi đâu.</p>
+
+  <div class="card">
+    <div class="mode" role="tablist">
+      <button id="m-g2n" class="on" role="tab">Gross → Net</button>
+      <button id="m-n2g" role="tab">Net → Gross</button>
+    </div>
+    <div class="grid">
+      <label class="big"><span id="lbl-amount">Lương Gross (VNĐ/tháng)</span><input id="amount" inputmode="numeric" value="30.000.000" autocomplete="off"></label>
+      <label>Lương đóng bảo hiểm<select id="insMode"><option value="full">Bằng lương chính thức</option><option value="custom">Mức khác</option></select></label>
+      <label id="insCustomWrap" hidden>Mức lương đóng BH (VNĐ)<input id="insCustom" inputmode="numeric" value="0"></label>
+      <label>Số người phụ thuộc<input id="deps" type="number" min="0" max="20" value="0"></label>
+      <label>Vùng lương tối thiểu<select id="region"><option value="1">Vùng I</option><option value="2">Vùng II</option><option value="3">Vùng III</option><option value="4">Vùng IV</option></select></label>
+      <label>Phụ cấp không chịu thuế (VNĐ)<input id="allow" inputmode="numeric" value="0"></label>
+      <label>Kỳ áp dụng<select id="period"></select></label>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div class="ad-slot" id="ad-top"><!-- Khe AdSense: chỉ hiển thị khi đã có publisher ID được duyệt --></div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Chi tiết</h2>
+    <table id="detail"></table>
+    <h2>Thuế theo từng bậc</h2>
+    <table id="brackets"></table>
+    <h2>Chi phí doanh nghiệp trả</h2>
+    <table id="employer"></table>
+    <div class="share"><button id="copy">📋 Sao chép kết quả</button><button id="print">🖨️ In</button></div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Cách tính</h2>
+    <p class="note">
+      <b>1. Bảo hiểm bắt buộc (người lao động):</b> BHXH 8% + BHYT 1,5% (tối đa trên 20 × lương cơ sở) và BHTN 1% (tối đa trên 20 × lương tối thiểu vùng).<br>
+      <b>2. Thu nhập tính thuế</b> = Gross − bảo hiểm − phụ cấp không chịu thuế − 15,5 triệu − 6,2 triệu × số người phụ thuộc.<br>
+      <b>3. Thuế TNCN</b> theo biểu lũy tiến 5 bậc: đến 10 triệu 5%; 10–30 triệu 10%; 30–60 triệu 20%; 60–100 triệu 30%; trên 100 triệu 35%.<br>
+      <b>4. Net</b> = Gross − bảo hiểm − thuế TNCN.
+    </p>
+    <p class="note" id="sources"></p>
+  </div>
+
+  <footer>
+    Công cụ tham khảo, không thay thế tư vấn thuế hay xác nhận của cơ quan thuế/BHXH. Không áp dụng cho trường hợp đặc biệt
+    (người nước ngoài không cư trú, hợp đồng dưới 3 tháng khấu trừ 10%, miễn giảm riêng…). Không thu thập dữ liệu lương của bạn;
+    trang chỉ đếm lượt xem tổng hợp, không cookie. <span id="ver"></span> · <a href="privacy.html">Chính sách bảo mật</a>
+  </footer>
+</div>
+
+<script src="ads-config.js" onerror="window.ARC_ADS={}"></script>
+<script>
+// ===== Quảng cáo: chỉ hiển thị khi chủ sở hữu đã bật AdSense trong AI Revenue City (ads-config.js)
+(function () {
+  const ads = window.ARC_ADS || {};
+  if (!ads.client) return;
+  const s = document.createElement("script");
+  s.async = true; s.crossOrigin = "anonymous";
+  s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + encodeURIComponent(ads.client);
+  document.head.appendChild(s);
+  if (ads.slot) {
+    const box = document.getElementById("ad-top");
+    box.style.display = "block";
+    box.innerHTML = '<ins class="adsbygoogle" style="display:block" data-ad-client="' + ads.client + '" data-ad-slot="' +
+      ads.slot + '" data-ad-format="auto" data-full-width-responsive="true"></ins>';
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
+  }
+})();
+</script>
+<script>
+// ===== Tham số pháp lý: mỗi giá trị có nguồn và trạng thái xác minh =====
+const RULES = {
+  version: "2026-11-05",
+  pit: {
+    personal: 15500000, dependent: 6200000,
+    brackets: [[10e6, .05], [30e6, .10], [60e6, .20], [100e6, .30], [Infinity, .35]],
+    source: "Luật Thuế TNCN (sửa đổi) & mức giảm trừ áp dụng từ kỳ tính thuế 2026 – đối chiếu: MISA Help (cập nhật biểu thuế từ 01/01/2026)",
+  },
+  insurance: { bhxh: .08, bhyt: .015, bhtn: .01, employer: { bhxh: .175, bhyt: .03, bhtn: .01 }, capMultiplier: 20 },
+  periods: [
+    { id: "2026H2", label: "Từ 01/07/2026", baseSalary: 2530000, baseSource: "Lương cơ sở 2.530.000đ theo Nghị định 161/2026/NĐ-CP (hiệu lực 01/07/2026)" },
+    { id: "2026H1", label: "01/01 – 30/06/2026", baseSalary: 2340000, baseSource: "Lương cơ sở 2.340.000đ (Nghị định 73/2024/NĐ-CP)" },
+  ],
+  regionalMin: { 1: 5310000, 2: 4730000, 3: 4140000, 4: 3700000,
+    source: "Lương tối thiểu vùng theo Nghị định 293/2025/NĐ-CP từ 01/01/2026 (vùng III, IV: cần đối chiếu văn bản gốc)" },
+};
+
+const $ = (id) => document.getElementById(id);
+const parse = (s) => Number(String(s).replace(/[^\d]/g, "")) || 0;
+const vnd = (n) => Math.round(n).toLocaleString("vi-VN") + " ₫";
+let mode = "g2n";
+
+RULES.periods.forEach((p) => $("period").add(new Option(p.label, p.id)));
+
+function pitTax(taxable) {
+  let tax = 0, prev = 0; const rows = [];
+  for (const [cap, rate] of RULES.pit.brackets) {
+    const part = Math.max(0, Math.min(taxable, cap) - prev);
+    rows.push({ from: prev, to: cap, rate, part, tax: part * rate });
+    tax += part * rate; prev = cap;
+    if (taxable <= cap) break;
+  }
+  return { tax, rows };
+}
+
+function grossToNet(gross, o) {
+  const p = RULES.periods.find((x) => x.id === o.period);
+  const insBase = o.insMode === "custom" ? o.insCustom : gross;
+  const capSI = RULES.insurance.capMultiplier * p.baseSalary;
+  const capUI = RULES.insurance.capMultiplier * RULES.regionalMin[o.region];
+  const siBase = Math.min(insBase, capSI), uiBase = Math.min(insBase, capUI);
+  const bhxh = siBase * RULES.insurance.bhxh, bhyt = siBase * RULES.insurance.bhyt, bhtn = uiBase * RULES.insurance.bhtn;
+  const ins = bhxh + bhyt + bhtn;
+  const deduct = RULES.pit.personal + RULES.pit.dependent * o.deps;
+  const taxable = Math.max(0, gross - ins - o.allow - deduct);
+  const { tax, rows } = pitTax(taxable);
+  const E = RULES.insurance.employer;
+  const emp = { bhxh: siBase * E.bhxh, bhyt: siBase * E.bhyt, bhtn: uiBase * E.bhtn };
+  return { gross, bhxh, bhyt, bhtn, ins, deduct, taxable, tax, rows, net: gross - ins - tax, emp,
+    empTotal: gross + emp.bhxh + emp.bhyt + emp.bhtn, capSI, capUI, p };
+}
+
+function netToGross(net, o) {
+  let lo = net, hi = net * 2 + 50e6;
+  for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (grossToNet(mid, o).net < net) lo = mid; else hi = mid; }
+  return grossToNet(Math.round(hi), o);
+}
+
+function opts() {
+  return { insMode: $("insMode").value, insCustom: parse($("insCustom").value), deps: Math.max(0, +$("deps").value || 0),
+    region: +$("region").value, allow: parse($("allow").value), period: $("period").value };
+}
+
+function render() {
+  const o = opts(); const amt = parse($("amount").value);
+  const r = mode === "g2n" ? grossToNet(amt, o) : netToGross(amt, o);
+  $("result").innerHTML = `
+    <div class="stat"><span>Lương Gross</span><b>${vnd(r.gross)}</b></div>
+    <div class="stat"><span>Bảo hiểm (NLĐ)</span><b>${vnd(r.ins)}</b></div>
+    <div class="stat"><span>Thuế TNCN</span><b>${vnd(r.tax)}</b></div>
+    <div class="stat net"><span>Lương Net thực nhận</span><b>${vnd(r.net)}</b></div>`;
+  $("detail").innerHTML = `
+    <tr><td>Lương Gross</td><td>${vnd(r.gross)}</td></tr>
+    <tr><td>BHXH 8% (trần ${vnd(r.capSI)})</td><td>− ${vnd(r.bhxh)}</td></tr>
+    <tr><td>BHYT 1,5%</td><td>− ${vnd(r.bhyt)}</td></tr>
+    <tr><td>BHTN 1% (trần ${vnd(r.capUI)})</td><td>− ${vnd(r.bhtn)}</td></tr>
+    <tr><td>Giảm trừ gia cảnh (bản thân + ${o.deps} NPT)</td><td>${vnd(r.deduct)}</td></tr>
+    <tr><td>Phụ cấp không chịu thuế</td><td>${vnd(o.allow)}</td></tr>
+    <tr><td><b>Thu nhập tính thuế</b></td><td><b>${vnd(r.taxable)}</b></td></tr>
+    <tr><td>Thuế TNCN</td><td>− ${vnd(r.tax)}</td></tr>
+    <tr><td><b>Net</b></td><td><b>${vnd(r.net)}</b></td></tr>`;
+  $("brackets").innerHTML = "<tr><th>Bậc</th><th>Thu nhập tính thuế</th><th>Thuế suất</th><th>Thuế</th></tr>" +
+    r.rows.map((b, i) => `<tr><td>${i + 1}</td><td>${vnd(b.part)}</td><td>${b.rate * 100}%</td><td>${vnd(b.tax)}</td></tr>`).join("");
+  $("employer").innerHTML = `
+    <tr><td>Lương Gross</td><td>${vnd(r.gross)}</td></tr>
+    <tr><td>BHXH 17,5% (gồm TNLĐ-BNN)</td><td>${vnd(r.emp.bhxh)}</td></tr>
+    <tr><td>BHYT 3%</td><td>${vnd(r.emp.bhyt)}</td></tr>
+    <tr><td>BHTN 1%</td><td>${vnd(r.emp.bhtn)}</td></tr>
+    <tr><td><b>Tổng chi phí doanh nghiệp</b></td><td><b>${vnd(r.empTotal)}</b></td></tr>`;
+  $("sources").innerHTML = `Nguồn tham số: ${RULES.pit.source}; ${r.p.baseSource}; ${RULES.regionalMin.source}.`;
+  window.__last = r;
+}
+
+function fmtInput(el) { el.addEventListener("input", () => { const v = parse(el.value); el.value = v ? v.toLocaleString("vi-VN") : ""; render(); }); }
+["amount", "insCustom", "allow"].forEach((id) => fmtInput($(id)));
+["deps", "region", "period"].forEach((id) => $(id).addEventListener("input", render));
+$("insMode").addEventListener("change", () => { $("insCustomWrap").hidden = $("insMode").value !== "custom"; render(); });
+$("m-g2n").onclick = () => { mode = "g2n"; $("m-g2n").classList.add("on"); $("m-n2g").classList.remove("on"); $("lbl-amount").textContent = "Lương Gross (VNĐ/tháng)"; render(); };
+$("m-n2g").onclick = () => { mode = "n2g"; $("m-n2g").classList.add("on"); $("m-g2n").classList.remove("on"); $("lbl-amount").textContent = "Lương Net mong muốn (VNĐ/tháng)"; render(); };
+$("copy").onclick = () => { const r = window.__last; navigator.clipboard?.writeText(`Gross ${vnd(r.gross)} → Net ${vnd(r.net)} (BH ${vnd(r.ins)}, thuế ${vnd(r.tax)})`); beacon("tool_use"); };
+$("print").onclick = () => window.print();
+$("ver").textContent = "Phiên bản tham số " + RULES.version + ".";
+
+// ===== Đo lường tổng hợp, không cookie, không định danh =====
+const ENDPOINT = document.currentScript?.dataset.endpoint || "/api/beacon";
+function beacon(metric) {
+  try { navigator.sendBeacon?.(ENDPOINT, new Blob([JSON.stringify({ asset: "luong-gross-net", metric })], { type: "application/json" })); } catch (e) { /* bỏ qua */ }
+}
+let used = false;
+$("amount").addEventListener("change", () => { if (!used) { used = true; beacon("tool_use"); } });
+beacon("pageview");
+render();
+// Self-test (chạy khi mở với ?selftest): đối chiếu ví dụ tính tay
+if (location.search.includes("selftest")) {
+  const o = { insMode: "full", insCustom: 0, deps: 0, region: 1, allow: 0, period: "2026H2" };
+  const r = grossToNet(30e6, o); // BH 3.150.000; TNTT 11.350.000; thuế 500.000 + 135.000 = 635.000
+  console.assert(Math.round(r.ins) === 3150000 && Math.round(r.tax) === 635000 && Math.round(r.net) === 26215000, "selftest 30tr", r);
+  const r2 = netToGross(26215000, o); console.assert(Math.abs(r2.gross - 30e6) <= 2, "selftest n2g", r2.gross);
+  const r3 = grossToNet(100e6, o); // trần BHXH/BHYT 50,6tr; BHTN 1% × 100tr (trần 106,2tr)
+  console.assert(Math.round(r3.bhxh + r3.bhyt) === 4807000 && Math.round(r3.bhtn) === 1000000, "selftest cap", r3);
+  document.title = "SELFTEST " + (Math.round(r.net) === 26215000 && Math.abs(r2.gross - 30e6) <= 2 && Math.round(r3.bhxh + r3.bhyt) === 4807000 ? "PASS" : "FAIL");
+}
+</script>
+</body>
+</html>
