@@ -1,2 +1,2 @@
 // Sinh tự động bởi AI Revenue City – chỉnh trong dashboard, không sửa tay
-window.ARC_AFF = {"links": []};
+window.ARC_AFF = {"links": [{"title": "Máy tính Casio FX-580VNX (học sinh, sinh viên, kế toán)", "url": "https://s.shopee.vn/8pn7MX4mWG"}, {"title": "Sổ tay ghi kế hoạch chi tiêu hằng ngày", "url": "https://s.shopee.vn/6VPCaIASW1"}, {"title": "Sổ tiết kiệm 10 túi zip chia tiền theo mục chi", "url": "https://s.shopee.vn/70LTBDm9a5"}, {"title": "Heo đất tiết kiệm", "url": "https://s.shopee.vn/2gCU1JkOiF"}]};
